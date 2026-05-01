@@ -1,11 +1,9 @@
 package org.example.demo2;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 import java.util.Stack;
 
 public class PDA {
@@ -14,61 +12,49 @@ public class PDA {
     public String startState;
     public String acceptState;
 
-    public ValidationResult validate(String input) {        // 🧠 Upgraded Config with an Epsilon Loop Killer
+    public ValidationResult validate(String input) {
         class Config {
             String state;
             int position;
             Stack<String> stack;
             List<String> trace;
-            int epsilons; // Tracks consecutive epsilon jumps
 
-            Config(String state, int position, Stack<String> stack, List<String> trace, int epsilons) {
+            Config(String state, int position, Stack<String> stack, List<String> trace) {
                 this.state = state;
                 this.position = position;
                 this.stack = (Stack<String>) stack.clone();
                 this.trace = new ArrayList<>(trace);
-                this.epsilons = epsilons;
             }
         }
 
-        // Back to the fair LinkedList!
         Queue<Config> queue = new LinkedList<>();
         Stack<String> startStack = new Stack<>();
-        startStack.push("$"); 
+        startStack.push("Z0"); // Bottom of stack
 
         List<String> startTrace = new ArrayList<>();
-        startTrace.add("Start: State " + startState + ", Stack [$]");
-        queue.add(new Config(startState, 0, startStack, startTrace, 0));
-
-        // 🧠 MEMORY: Prevents the machine from doing the exact same work twice
-        Set<String> visited = new HashSet<>(); 
+        startTrace.add("Start: State " + startState + ", Stack [Z0]");
+        queue.add(new Config(startState, 0, startStack, startTrace));
 
         Config lastProcessed = null;
-
         int totalConfigs = 0;
-        int maxConfigs = 15000;
-        
+        int maxConfigs = 10000; // Total limit across all branches
+
         while (!queue.isEmpty()) {
             Config current = queue.poll();
             lastProcessed = current;
-            
             totalConfigs++;
+
             if (totalConfigs > maxConfigs) {
-                current.trace.add("FATAL: State space explosion. Over " + maxConfigs + " paths checked.");
-                return new ValidationResult(false, "Rejected: Execution limit exceeded.", current.trace);
+                return new ValidationResult(false, "Rejected: Execution limit exceeded (potential infinite loop).", current.trace);
             }
-            
-            if (current.epsilons > 50) continue;
 
-            // MEMORY CHECK: Have we been in this exact state before? If yes, skip it!
-            String stateKey = current.state + "|" + current.position + "|" + current.stack.toString();
-            if (visited.contains(stateKey)) continue;
-            visited.add(stateKey);
+            // Safety limit for a single path
+            if (current.trace.size() > 200) continue;
 
-            // Win Condition
+            // NEW LOGIC: Acceptance by Empty Stack
             if (current.stack.isEmpty() && current.position == input.length()) {
-                current.trace.add("Stack is empty ($ popped) and all input consumed! Acceptance reached.");
-                return new ValidationResult(true, "Accepted by PDA", current.trace);
+                current.trace.add("Stack is empty (Z0 popped) and all input consumed! Acceptance reached.");
+                return new ValidationResult(true, "Accepted by PDA (Empty Stack)", current.trace);
             }
 
             for (PDATransition t : transitions) {
@@ -77,8 +63,7 @@ public class PDA {
                 String stackTop = current.stack.isEmpty() ? "ε" : current.stack.peek();
                 if (!t.pop.equals("ε") && !t.pop.equals(stackTop)) continue;
 
-                boolean isEpsilon = t.input.equals("ε");
-                boolean inputMatches = isEpsilon || 
+                boolean inputMatches = t.input.equals("ε") || 
                     (current.position < input.length() && t.input.equals(String.valueOf(input.charAt(current.position))));
 
                 if (!inputMatches) continue;
@@ -86,25 +71,35 @@ public class PDA {
                 Stack<String> newStack = (Stack<String>) current.stack.clone();
                 if (!t.pop.equals("ε") && !newStack.isEmpty()) newStack.pop();
 
-                // Bulletproof character array push
                 if (!t.push.equals("ε")) {
-                    for (int j = t.push.length() - 1; j >= 0; j--) {
-                        newStack.push(String.valueOf(t.push.charAt(j)));
+                    String[] toPush = t.push.split("");
+                    for (int j = toPush.length - 1; j >= 0; j--) {
+                        if (!toPush[j].equals("ε")) newStack.push(toPush[j]);
                     }
                 }
 
-                int newPos = current.position + (isEpsilon ? 0 : 1);
-                // If we read a real letter, reset the epsilon counter. If not, add 1.
-                int newEpsilons = isEpsilon ? current.epsilons + 1 : 0;
+                // Create descriptive step details
+                StringBuilder stepDetail = new StringBuilder();
+                stepDetail.append(String.format("Input: '%s', State: %s -> %s", t.input, t.fromState, t.toState));
                 
-                List<String> nextTrace = new ArrayList<>(current.trace);
-                nextTrace.add(String.format("Input: '%s', State: %s -> %s | POP: '%s' | PUSH: '%s' | Stack: %s", 
-                    isEpsilon ? "ε" : t.input, t.fromState, t.toState, t.pop, t.push, newStack.toString()));
+                if (!t.pop.equals("ε")) {
+                    stepDetail.append(String.format(" | POP: '%s'", t.pop));
+                }
+                if (!t.push.equals("ε")) {
+                    stepDetail.append(String.format(" | PUSH: '%s'", t.push));
+                }
+                
+                stepDetail.append(String.format(" | Stack Size: %d | Stack: %s", newStack.size(), newStack.toString()));
 
-                queue.add(new Config(t.toState, newPos, newStack, nextTrace, newEpsilons));
+                int newPos = current.position + (t.input.equals("ε") ? 0 : 1);
+                List<String> nextTrace = new ArrayList<>(current.trace);
+                nextTrace.add(stepDetail.toString());
+
+                queue.add(new Config(t.toState, newPos, newStack, nextTrace));
             }
         }
 
-        return new ValidationResult(false, "Rejected: No valid path to accept state.", lastProcessed != null ? lastProcessed.trace : new ArrayList<>());
+        String reason = "Rejected: No valid path to accept state.";
+        return new ValidationResult(false, reason, lastProcessed != null ? lastProcessed.trace : new ArrayList<>());
     }
 }

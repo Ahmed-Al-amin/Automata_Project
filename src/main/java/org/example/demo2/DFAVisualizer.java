@@ -31,10 +31,13 @@ public class DFAVisualizer {
         root.setStyle("-fx-background-color: white;");
 
         Map<String, Point> positions = new HashMap<>();
-        positions.put("q0", new Point(150, 300));
-        positions.put("q1", new Point(350, 150));
-        positions.put("q2", new Point(550, 300));
-        positions.put("q3", new Point(350, 450));
+        positions.put("q1", new Point(100, 300));
+        positions.put("q2", new Point(250, 150));
+        positions.put("q3", new Point(450, 150));
+        positions.put("q4", new Point(250, 450));
+        positions.put("q5", new Point(450, 450));
+        positions.put("q6", new Point(650, 300));
+        positions.put("q7", new Point(450, 300));
 
         DFA dfa = DFABuilder.build();
 

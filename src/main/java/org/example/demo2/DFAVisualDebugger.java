@@ -104,10 +104,13 @@ public class DFAVisualDebugger {
     }
 
     private void setupPositions() {
-        positions.put("q0", new Point(150, 225));
-        positions.put("q1", new Point(350, 100));
-        positions.put("q2", new Point(550, 225));
-        positions.put("q3", new Point(350, 350));
+        positions.put("q1", new Point(100, 225));
+        positions.put("q2", new Point(250, 100));
+        positions.put("q3", new Point(450, 100));
+        positions.put("q4", new Point(250, 350));
+        positions.put("q5", new Point(450, 350));
+        positions.put("q6", new Point(650, 225));
+        positions.put("q7", new Point(450, 225));
     }
 
     private void renderDiagram() {

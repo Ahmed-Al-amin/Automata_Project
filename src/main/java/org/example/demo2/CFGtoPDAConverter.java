@@ -12,11 +12,11 @@ public class CFGtoPDAConverter {
         pda.startState = "q0";
         pda.acceptState = "qf";
 
-        String startStackSymbol = "$";
+        String startStackSymbol = "Z0";
 
         // 1️⃣ Push start symbol + stack bottom
         pda.transitions.add(
-                new PDATransition("q0", "ε", "ε", "q1", cfg.startSymbol)
+                new PDATransition("q0", "ε", "ε", "q1", cfg.startSymbol + startStackSymbol)
         );
 
         // 2️⃣ Handle productions
@@ -29,7 +29,7 @@ public class CFGtoPDAConverter {
                     pushString = "ε";
                 } else {
                     // 🔥 Reverse production for correct stack push
-                    pushString = prod;
+                    pushString = new StringBuilder(prod).reverse().toString();
                 }
 
                 pda.transitions.add(
