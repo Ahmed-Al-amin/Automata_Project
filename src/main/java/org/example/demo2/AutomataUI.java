@@ -263,34 +263,46 @@ public class AutomataUI extends Application {
             
             StringBuilder result = new StringBuilder();
             String testString = cfgInputField.getText().trim();
-            if (!testString.isEmpty()) {
+            boolean shouldTest = !testString.isEmpty();
+            if (testString.equals("ε")) {
+                testString = ""; // Translate physical ε to true empty string
+                shouldTest = true; // Force the test to run
+            }
+
+            if (shouldTest) {
                 ValidationResult cfgRes = CFGValidator.validate(cfg, testString);
                 ValidationResult pdaRes = lastPDA.validate(testString);
                 result.append("Grammar Result: ").append(cfgRes.accepted ? "✅ Accepted" : "❌ Rejected").append("\n");
                 result.append("PDA Result:     ").append(pdaRes.accepted ? "✅ Accepted" : "❌ Rejected").append("\n\n");
-                lastResult = pdaRes; // This enables the Trace button
+                lastResult = pdaRes; 
             }
 
             result.append("Generated PDA Transitions:\n");
             for (PDATransition t : lastPDA.transitions) result.append(t).append("\n");
             outputArea.setText(result.toString());
         } else if (choice.equals("DFA")) {
-            if (input.isEmpty()) {
+            if (input.equals("ε")) {
+                input = "";
+            }   
+            if (input.isEmpty() && !inputField.getText().trim().equals("ε")) {
                 outputArea.setText("Enter a binary string.");
                 return;
             }
-            if (!input.matches("[01]+")) {
+            if (!input.isEmpty() && !input.matches("[01]+")) {
                 outputArea.setText("❌ ERROR: DFA only accepts binary characters (0 and 1).");
                 return;
             }
             lastResult = DFABuilder.build().validate(input);
             outputArea.setText("Input: " + input + "\nResult: " + (lastResult.accepted ? "✅ " : "❌ ") + lastResult.reason);
         } else if (choice.equals("PDA")) {
-            if (input.isEmpty()) {
+            if (input.equals("ε")) {
+                input = "";
+            }    
+            if (input.isEmpty() && !inputField.getText().trim().equals("ε")) {
                 outputArea.setText("Enter an 'a' and 'b' string.");
                 return;
             }
-            if (!input.matches("[ab]+")) {
+            if (!input.isEmpty() && !input.matches("[ab]+")) {
                 outputArea.setText("❌ ERROR: PDA only accepts 'a' and 'b'.");
                 return;
             }
@@ -327,7 +339,7 @@ public class AutomataUI extends Application {
             for (String r : parts[1].split("\\|")) {
                 r = r.trim(); rules.add(r);
                 for (char c : r.toCharArray()) {
-                    if (Character.isLowerCase(c)) terms.add(String.valueOf(c));
+                    if (Character.isLowerCase(c) && c != 'ε') terms.add(String.valueOf(c));
                     else if (Character.isUpperCase(c)) vars.add(String.valueOf(c));
                 }
             }

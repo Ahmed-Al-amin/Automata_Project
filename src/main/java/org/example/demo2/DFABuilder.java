@@ -24,7 +24,7 @@ public class DFABuilder {
         }
 
         // q1: 0 ones seen
-        dfa.transition.get("q1").put('0', "q1");
+        dfa.transition.get("q1").put('0', "q7");
         dfa.transition.get("q1").put('1', "q2");
 
         // q2, q3: 1 one seen (mod 3)

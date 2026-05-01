@@ -29,10 +29,10 @@ public class PDA_anbn {
         
         // q2 -> q3: On empty stack (only Z0 left), accept
         // We pop Z0 to match the "Accept State reached" condition in PDA.java (which doesn't strictly check empty stack but it's cleaner)
-        pda.transitions.add(new PDATransition("q2", "ε", "Z0", "q3", "ε"));
+        pda.transitions.add(new PDATransition("q2", "ε", "$", "q3", "ε"));
         
         // Special case: n=0 (empty string)
-        pda.transitions.add(new PDATransition("q1", "ε", "Z0", "q3", "ε"));
+        pda.transitions.add(new PDATransition("q1", "ε", "$", "q3", "ε"));
 
         return pda;
     }
