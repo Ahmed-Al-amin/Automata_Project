@@ -56,7 +56,23 @@ public class AutomataUI extends Application {
         // ===== INPUTS =====
         inputField = new TextField();
         inputField.setPromptText("Enter input string...");
-        VBox stringInputBox = new VBox(5, new Label("Input String:"), inputField);
+        
+        Button randomBtn = new Button("🎲 Random");
+        randomBtn.setStyle("-fx-font-size: 10px; -fx-background-color: #e1e1e1;");
+        randomBtn.setOnAction(e -> {
+            Random rand = new Random();
+            int length = rand.nextInt(15); // Random length 0-14
+            StringBuilder sb = new StringBuilder();
+            String alphabet = selectedMode.equals("DFA") ? "01" : "ab";
+            for (int i = 0; i < length; i++) {
+                sb.append(alphabet.charAt(rand.nextInt(alphabet.length())));
+            }
+            inputField.setText(sb.toString().isEmpty() ? "ε" : sb.toString());
+        });
+
+        HBox inputLabelRow = new HBox(10, new Label("Input String:"), randomBtn);
+        inputLabelRow.setAlignment(Pos.CENTER_LEFT);
+        VBox stringInputBox = new VBox(5, inputLabelRow, inputField);
 
         grammarArea = new TextArea();
         grammarArea.setPromptText("S -> aSb | ε\nA -> aS | b");
