@@ -41,7 +41,7 @@ public class PDAVisualDebugger {
         this.input = input;
         this.pda = pda;
         this.currentState = pda.startState;
-        this.stack.push("Z0");
+        this.stack.push("$");
     }
 
     public void show() {
@@ -228,7 +228,7 @@ public class PDAVisualDebugger {
         currentIndex = 0;
         currentState = pda.startState;
         stack.clear();
-        stack.push("Z0");
+        stack.push("$");
         statusLabel.setText("Reset.");
         updateHighlight();
         updateStackView();
