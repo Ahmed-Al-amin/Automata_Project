@@ -24,6 +24,8 @@ public class AutomataUI extends Application {
     private Button viewPdaBtn;
     private Button debugPdaBtn;
     private Button runBtn;
+    private Button viewCfgPdaBtn;
+    private Button debugCfgPdaBtn;
 
     private static Button selectedButton = null;
     private String selectedMode = "";
@@ -112,6 +114,26 @@ public class AutomataUI extends Application {
         debugDfaBtn = new Button("🐛 Debug DFA Step-by-Step");
         viewPdaBtn = new Button("👁 View PDA Diagram");
         debugPdaBtn = new Button("🐛 Debug PDA Step-by-Step");
+        viewCfgPdaBtn = new Button("👁 View CFG-PDA Diagram");
+        debugCfgPdaBtn = new Button("🐛 Debug CFG-PDA Step-by-Step");
+        styleSecondaryButton(viewCfgPdaBtn);
+        styleSecondaryButton(debugCfgPdaBtn);
+
+        // The Actions!
+        viewCfgPdaBtn.setOnAction(e -> {
+            if (lastPDA != null) CFGPDAVisualizer.show(lastPDA);
+        });
+
+        debugCfgPdaBtn.setOnAction(e -> {
+            // ONLY open debugger if we have a successful trace!
+            if (lastPDA != null && lastResult != null && lastResult.accepted) {
+                String testString = cfgInputField.getText().trim();
+                if (testString.equals("ε")) testString = ""; 
+                new CFGPDAVisualDebugger(testString, lastPDA, lastResult.trace).show();
+            } else {
+                outputArea.setText("❌ Please run and ACCEPT a string first to generate a debugging trace!");
+            }
+        });
 
         stylePrimaryButton(runBtn);
         styleSecondaryButton(clearBtn);
@@ -122,7 +144,7 @@ public class AutomataUI extends Application {
         styleSecondaryButton(viewPdaBtn);
         styleSecondaryButton(debugPdaBtn);
 
-        HBox controls = new HBox(10, runBtn, clearBtn, traceBtn, exportBtn, viewDfaBtn, debugDfaBtn, viewPdaBtn, debugPdaBtn);
+        HBox controls = new HBox(10, runBtn, clearBtn, traceBtn, exportBtn, viewDfaBtn, debugDfaBtn, viewPdaBtn, debugPdaBtn, viewCfgPdaBtn, debugCfgPdaBtn);
         refreshButtonVisibility(); // Initial hide
 
         // ===== OUTPUT =====
@@ -254,6 +276,15 @@ public class AutomataUI extends Application {
         debugPdaBtn.setVisible(isPdaMode);
         debugPdaBtn.setManaged(isPdaMode);
         
+        
+        // CFG Visualizers: only show up in CFG mode
+        viewCfgPdaBtn.setVisible(canExport);
+        viewCfgPdaBtn.setManaged(canExport);
+        // Only allow debug if we actually have a winning trace to play back
+        boolean canDebugCfg = canExport && lastResult != null && lastResult.accepted;
+        debugCfgPdaBtn.setVisible(canDebugCfg);
+        debugCfgPdaBtn.setManaged(canDebugCfg);
+        
         System.out.println("DEBUG: Mode=" + selectedMode + ", hasTrace=" + hasTrace + ", lastResult=" + (lastResult != null));
     }
 
@@ -274,7 +305,13 @@ public class AutomataUI extends Application {
                 outputArea.setText("Enter a grammar.");
                 return;
             }
-            CFG cfg = parseGrammar(grammarText);
+            CFG cfg;
+            try {
+                cfg = parseGrammar(grammarText);
+            } catch (IllegalArgumentException ex) {
+                outputArea.setText("❌ " + ex.getMessage());
+                return; // Stop the engine from running a broken grammar!
+            }
             lastPDA = CFGtoPDAConverter.convert(cfg);
             
             StringBuilder result = new StringBuilder();
@@ -342,14 +379,20 @@ public class AutomataUI extends Application {
         }
     }
 
-    private CFG parseGrammar(String text) {
+    private CFG parseGrammar(String text) throws IllegalArgumentException {
         Map<String, List<String>> prods = new HashMap<>();
         Set<String> vars = new HashSet<>(), terms = new HashSet<>();
         String[] lines = text.split("\n");
         for (String line : lines) {
             String[] parts = line.split("->");
             if (parts.length < 2) continue;
+            
             String left = parts[0].trim();
+            // 🎉 THE FIX: Enforce CFG Mathematical Rules (LHS must be Uppercase Variable)
+            if (left.isEmpty() || !Character.isUpperCase(left.charAt(0))) {
+                throw new IllegalArgumentException("Grammar Error: Left-hand side '" + left + "' must be an UPPERCASE non-terminal!");
+            }
+            
             vars.add(left);
             List<String> rules = new ArrayList<>();
             for (String r : parts[1].split("\\|")) {
