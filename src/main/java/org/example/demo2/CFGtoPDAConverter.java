@@ -7,19 +7,19 @@ public class CFGtoPDAConverter {
     public static PDA convert(CFG cfg) {
         PDA pda = new PDA();
 
-        // States
+        // Initialize Standard States
         pda.states.addAll(Arrays.asList("q0", "q1", "qf"));
         pda.startState = "q0";
         pda.acceptState = "qf";
 
         String startStackSymbol = "$";
 
-        // 1️⃣ Push start symbol + stack bottom
+        // 1- Push start symbol & stack marker
         pda.transitions.add(
                 new PDATransition("q0", "ε", "ε", "q1", cfg.startSymbol)
         );
 
-        // 2️⃣ Handle productions
+        // 2- Handle Production Rules (Push variables to the stack)
         for (String var : cfg.productions.keySet()) {
             for (String prod : cfg.productions.get(var)) {
 
@@ -27,8 +27,8 @@ public class CFGtoPDAConverter {
 
                 if (prod.equals("ε")) {
                     pushString = "ε";
-                } else {
-                    // 🔥 Reverse production for correct stack push
+                } 
+                else {                    
                     pushString = prod;
                 }
 
@@ -38,14 +38,14 @@ public class CFGtoPDAConverter {
             }
         }
 
-        // 3️⃣ Match terminals
+        // 3- Match Terminals (Read input and pop stack)
         for (String t : cfg.terminals) {
             pda.transitions.add(
                     new PDATransition("q1", t, t, "q1", "ε")
             );
         }
 
-        // 4️⃣ Accept when stack reaches bottom symbol
+        // 4- Accept when stack reaches bottom symbol
         pda.transitions.add(
                 new PDATransition("q1", "ε", startStackSymbol, "qf", "ε")
         );

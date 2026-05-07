@@ -14,13 +14,13 @@ public class PDA {
     public String startState;
     public String acceptState;
 
-    public ValidationResult validate(String input) {        // 🧠 Upgraded Config with an Epsilon Loop Killer
+    public ValidationResult validate(String input) {        
         class Config {
             String state;
             int position;
             Stack<String> stack;
             List<String> trace;
-            int epsilons; // Tracks consecutive epsilon jumps
+            int epsilons; // to track consecutive epsilon jumps
 
             Config(String state, int position, Stack<String> stack, List<String> trace, int epsilons) {
                 this.state = state;
@@ -31,7 +31,6 @@ public class PDA {
             }
         }
 
-        // Back to the fair LinkedList!
         Queue<Config> queue = new LinkedList<>();
         Stack<String> startStack = new Stack<>();
         startStack.push("$"); 
@@ -40,7 +39,7 @@ public class PDA {
         startTrace.add("Start: State " + startState + ", Stack [$]");
         queue.add(new Config(startState, 0, startStack, startTrace, 0));
 
-        // 🧠 MEMORY: Prevents the machine from doing the exact same work twice
+        // Prevents the machine from doing the exact same work twice
         Set<String> visited = new HashSet<>(); 
 
         Config lastProcessed = null;
@@ -53,19 +52,20 @@ public class PDA {
             lastProcessed = current;
             
             totalConfigs++;
+            // top memory crashes
             if (totalConfigs > maxConfigs) {
                 current.trace.add("FATAL: State space explosion. Over " + maxConfigs + " paths checked.");
                 return new ValidationResult(false, "Rejected: Execution limit exceeded.", current.trace);
             }
             
+            // Stop infinite epsilon loops
             if (current.epsilons > 50) continue;
 
-            // MEMORY CHECK: Have we been in this exact state before? If yes, skip it!
+            // Stop repeating the same exact mistakes
             String stateKey = current.state + "|" + current.position + "|" + current.stack.toString();
             if (visited.contains(stateKey)) continue;
             visited.add(stateKey);
 
-            // Win Condition
             if (current.stack.isEmpty() && current.position == input.length()) {
                 current.trace.add("Stack is empty ($ popped) and all input consumed! Acceptance reached.");
                 return new ValidationResult(true, "Accepted by PDA", current.trace);
@@ -86,15 +86,14 @@ public class PDA {
                 Stack<String> newStack = (Stack<String>) current.stack.clone();
                 if (!t.pop.equals("ε") && !newStack.isEmpty()) newStack.pop();
 
-                // Bulletproof character array push
+                // Reverse push keeps the first character at the top of the stack
                 if (!t.push.equals("ε")) {
                     for (int j = t.push.length() - 1; j >= 0; j--) {
                         newStack.push(String.valueOf(t.push.charAt(j)));
                     }
                 }
 
-                int newPos = current.position + (isEpsilon ? 0 : 1);
-                // If we read a real letter, reset the epsilon counter. If not, add 1.
+                int newPos = current.position + (isEpsilon ? 0 : 1);               
                 int newEpsilons = isEpsilon ? current.epsilons + 1 : 0;
                 
                 List<String> nextTrace = new ArrayList<>(current.trace);

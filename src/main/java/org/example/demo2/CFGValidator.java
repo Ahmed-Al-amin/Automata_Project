@@ -8,8 +8,7 @@ public class CFGValidator {
         List<String> trace = new ArrayList<>();
         trace.add("Validating CFG for input: " + input);
         
-        // Use a memoization map to prevent redundant derivations
-        // Key: current derivation + position
+        // Initiate the recursive string derivation
         Set<String> visited = new HashSet<>();
 
         if (canDerive(cfg, cfg.startSymbol, input, 0, trace, 0, visited)) {

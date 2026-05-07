@@ -398,8 +398,14 @@ public class AutomataUI extends Application {
             for (String r : parts[1].split("\\|")) {
                 r = r.trim(); rules.add(r);
                 for (char c : r.toCharArray()) {
-                    if (Character.isLowerCase(c) && c != 'ε') terms.add(String.valueOf(c));
-                    else if (Character.isUpperCase(c)) vars.add(String.valueOf(c));
+                    if (c == ' ' || c == 'ε') continue;
+                    
+                    if (Character.isUpperCase(c)) {
+                        vars.add(String.valueOf(c)); 
+                    } 
+                    else {
+                        terms.add(String.valueOf(c)); 
+                    }
                 }
             }
             prods.put(left, rules);
